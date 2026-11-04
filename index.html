@@ -9,8 +9,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      --primary-color: #3cae9f;
-      --primary-dark: #2d897d;
+      --primary-color: #2aa89b;
+      --primary-dark: #1f8278;
       --primary-light: #e6f6f4;
       --bg-color: #f4f7f6;
       --card-bg: #ffffff;
@@ -80,7 +80,7 @@
       align-items: center;
       justify-content: center;
       padding: 6px;
-      box-shadow: 0 2px 8px rgba(60, 174, 159, 0.3);
+      box-shadow: 0 2px 8px rgba(42, 168, 155, 0.3);
     }
 
     .logo-svg svg {
@@ -111,7 +111,7 @@
       text-transform: uppercase;
     }
 
-    /* BUSCADOR Y FILTROS */
+    /* BUSCADOR */
     .search-box {
       width: 100%;
       max-width: 500px;
@@ -132,7 +132,7 @@
     .search-input:focus {
       border-color: var(--primary-color);
       background-color: #fff;
-      box-shadow: 0 0 0 4px rgba(60, 174, 159, 0.15);
+      box-shadow: 0 0 0 4px rgba(42, 168, 155, 0.15);
     }
 
     .search-icon {
@@ -145,10 +145,39 @@
       fill: var(--text-muted);
     }
 
+    /* BANNER DE PRECIOS ACTUALIZADOS */
+    .banner-container {
+      max-width: 1200px;
+      margin: 20px auto 0 auto;
+      padding: 0 20px;
+    }
+
+    .banner-update {
+      background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+      color: white;
+      padding: 12px 20px;
+      border-radius: var(--radius);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      box-shadow: var(--shadow-sm);
+      font-size: 14px;
+      font-weight: 600;
+      text-align: center;
+    }
+
+    .banner-update svg {
+      width: 20px;
+      height: 20px;
+      fill: white;
+      flex-shrink: 0;
+    }
+
     /* CONTENEDOR PRINCIPAL */
     .container {
       max-width: 1200px;
-      margin: 25px auto;
+      margin: 20px auto;
       padding: 0 20px;
     }
 
@@ -184,7 +213,7 @@
     .product-card:hover {
       transform: translateY(-4px);
       box-shadow: var(--shadow-md);
-      border-color: rgba(60, 174, 159, 0.4);
+      border-color: rgba(42, 168, 155, 0.4);
     }
 
     /* IMAGEN */
@@ -233,7 +262,7 @@
       background-color: #2b373a;
       color: #ffffff;
       font-weight: 800;
-      font-size: 15px;
+      font-size: 16px;
       padding: 4px 10px;
       border-radius: 6px;
       letter-spacing: 0.5px;
@@ -465,6 +494,7 @@
       padding: 50px 0;
       font-weight: 600;
       color: var(--primary-color);
+      grid-column: 1 / -1;
     }
   </style>
 </head>
@@ -482,7 +512,6 @@
         <div class="brand-titles">
           <span class="brand-name">Decolux</span>
           <span class="brand-sub">Diseño y Decoración</span>
-           <span class="brand-sub">POWERED by AL (v 1.1)</span>
         </div>
       </a>
 
@@ -494,6 +523,16 @@
       </div>
     </div>
   </header>
+
+  <!-- BANNER DESTACADO -->
+  <div class="banner-container">
+    <div class="banner-update">
+      <svg viewBox="0 0 24 24">
+        <path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
+      </svg>
+      <span>Precios actualizados desde 31/10/2026</span>
+    </div>
+  </div>
 
   <!-- CONTENIDO -->
   <main class="container">
@@ -534,33 +573,27 @@
   </div>
 
   <script>
-    // URL DE TU GOOGLE SHEET PUBLICADO COMO CSV (Reemplaza si usas otra)
-    const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQF0cj8lTWvyyAoIVumgxbjCDKHj58CCh5nat1-R8ZdYtBydu5MJTywibtHie_YE8mxGB2GEduGyn3V/pub?gid=116116672&single=true&output=csv";
+    // URL DE TU GOOGLE SHEET CSV CON PROXY CORS (Resuelve bloqueos en navegador local y hosting)
+    const RAW_SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQF0cj8lTWvyyAoIVumgxbjCDKHj58CCh5nat1-R8ZdYtBydu5MJTywibtHie_YE8mxGB2GEduGyn3V/pub?gid=116116672&single=true&output=csv";
+    const PROXY_URL = "https://corsproxy.io/?" + encodeURIComponent(RAW_SHEET_URL);
 
     let allProducts = [];
 
-    // Parseador básico de CSV a Array de Objetos
+    // Parseador CSV para manejar correctamente valores con comillas y comas internas
     function parseCSV(text) {
       const lines = text.split('\n').filter(line => line.trim() !== '');
       if (lines.length < 2) return [];
 
-      const headers = lines[0].split(',').map(h => h.trim().replace(/^"(.*)"$/, '$1'));
+      const headers = parseCSVLine(lines[0]);
       const result = [];
 
       for (let i = 1; i < lines.length; i++) {
-        // Regex para capturar columnas separadas por comas respetando comillas
-        const regex = /(?:,|\n|^)("(?:(?:"")*[^"]*)*"|[^",\n]*)/g;
-        const row = [];
-        let matches;
-        while ((matches = regex.exec(lines[i])) !== null) {
-          let val = matches[1].replace(/^"(.*)"$/, '$1').trim();
-          row.push(val);
-        }
-
+        const row = parseCSVLine(lines[i]);
         if (row.length >= headers.length) {
           let obj = {};
           headers.forEach((header, index) => {
-            obj[header] = row[index] || '';
+            let key = header.trim().replace(/^"(.*)"$/, '$1');
+            obj[key] = row[index] ? row[index].trim().replace(/^"(.*)"$/, '$1') : '';
           });
           result.push(obj);
         }
@@ -568,17 +601,32 @@
       return result;
     }
 
+    function parseCSVLine(line) {
+      const regex = /(?:,|\n|^)("(?:(?:"")*[^"]*)*"|[^",\n]*)/g;
+      const row = [];
+      let matches;
+      while ((matches = regex.exec(line)) !== null) {
+        let val = matches[1].replace(/^"(.*)"$/, '$1').trim();
+        row.push(val);
+      }
+      return row;
+    }
+
     async function loadCatalog() {
       const grid = document.getElementById('catalogGrid');
       try {
-        const response = await fetch(SHEET_CSV_URL);
+        let response = await fetch(PROXY_URL);
+        if (!response.ok) {
+          // Reintento directo en caso de fallo del proxy
+          response = await fetch(RAW_SHEET_URL);
+        }
         const dataText = await response.text();
         allProducts = parseCSV(dataText);
 
         renderProducts(allProducts);
       } catch (error) {
         grid.innerHTML = `<div style="grid-column: 1/-1; text-align:center; color:red; padding:40px;">
-          Error al cargar los datos del catálogo. Asegúrate de haber publicado la hoja de cálculo como CSV.
+          Error al cargar los datos del catálogo. Asegúrate de tener conexión a Internet y que la hoja siga publicada.
         </div>`;
       }
     }
@@ -620,7 +668,7 @@
           <div class="card-body">
             <div class="product-code-badge">${code}</div>
             <h3 class="product-title" title="${desc}">${desc}</h3>
-            ${(grupo || subgrupo) ? `<div class="product-categories">${grupo} / ${subgrupo}</div>` : ''}
+            ${(grupo || subgrupo) ? `<div class="product-categories">${grupo} ${subgrupo ? '/ ' + subgrupo : ''}</div>` : ''}
             
             <div class="prices-box">
               <div class="price-row"><span class="price-label">P. Público:</span><span class="price-public">${p2}</span></div>
@@ -639,7 +687,7 @@
       });
     }
 
-    // Buscador
+    // Buscador en tiempo real por Código, Descripción o Categoría
     document.getElementById('searchInput').addEventListener('input', (e) => {
       const query = e.target.value.toLowerCase().trim();
       const filtered = allProducts.filter(p => {
@@ -653,14 +701,14 @@
       renderProducts(filtered);
     });
 
-    // Funciones de Modal y Lightbox
+    // Funciones de Ventana Modal y Lightbox
     function openModal(index) {
       const p = allProducts[index];
       if (!p) return;
 
       document.getElementById('modalCode').textContent = p.IDPRODUCTO || 'S/C';
       document.getElementById('modalTitle').textContent = p.DESCRIPCION || '';
-      document.getElementById('modalCategory').textContent = `${p.GRUPO || ''} / ${p.SUBGRUPO || ''}`;
+      document.getElementById('modalCategory').textContent = `${p.GRUPO || ''} ${p.SUBGRUPO ? '/ ' + p.SUBGRUPO : ''}`;
       document.getElementById('modalP2').textContent = p.PRECIO2 ? `$${p.PRECIO2}` : '-';
       document.getElementById('modalP1').textContent = p.PRECIO1 ? `$${p.PRECIO1}` : '-';
       document.getElementById('modalP3').textContent = p.PRECIO3 ? `$${p.PRECIO3}` : '-';
@@ -686,7 +734,7 @@
       document.getElementById('lightbox').classList.remove('active');
     }
 
-    // Inicialización
+    // Cargar catálogo al iniciar la página
     loadCatalog();
   </script>
 </body>
